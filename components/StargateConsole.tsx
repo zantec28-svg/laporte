@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
-import GateCanvas from "./GateCanvas";
+import GateScene3D from "./GateScene3D";
 import Glyph from "./Glyph";
 import PlanetForm from "./PlanetForm";
 import AddressBook from "./AddressBook";
@@ -12,6 +12,7 @@ import { SoundEngine } from "@/lib/audio";
 import { GateEngine, MAX_OPEN_MS, type GateState, type LogKind } from "@/lib/gateEngine";
 import { keyOf, newId, resolve, type Planet } from "@/lib/worlds";
 import { loadPlanets, savePlanets } from "@/lib/storage";
+import { PRESETS, type PresetName } from "@/lib/scene/gateRoom";
 
 type LogEntry = { id: number; ts: string; msg: string; kind: LogKind };
 
@@ -35,6 +36,7 @@ export default function StargateConsole() {
   const [loaded, setLoaded] = useState(false);
   const [editing, setEditing] = useState<Planet | null>(null);
   const [muted, setMuted] = useState(false);
+  const [cam, setCam] = useState<{ name: PresetName; n: number }>({ name: "ensemble", n: 0 });
   const logSeq = useRef(0);
 
   const log = useCallback((msg: string, kind: LogKind = "") => {
@@ -162,21 +164,40 @@ export default function StargateConsole() {
 
       <main className="layout">
         <section className="gate-col" aria-label="La porte">
-          <div className="gate-wrap">
-            <GateCanvas engine={gate} />
+          <div className="view">
+            <GateScene3D engine={gate} preset={cam} />
+            <div className="cams" role="group" aria-label="Points de vue">
+              {(Object.keys(PRESETS) as PresetName[]).map((k) => (
+                <button key={k} type="button" className={`btn sm${cam.name === k ? " on" : ""}`} onClick={() => setCam((c) => ({ name: k, n: c.n + 1 }))}>
+                  {PRESETS[k].label}
+                </button>
+              ))}
+            </div>
+            <div className="hud">
+              <div className="status">
+                <span className="chip" data-s={chipState}>
+                  {LABELS[state]}
+                </span>
+                <span>{readout}</span>
+                {state === "open" && (
+                  <span className="timer">
+                    {pad(Math.floor(elapsed / 60))}:{pad(elapsed % 60)} / 38:00
+                  </span>
+                )}
+              </div>
+              {state === "open" && gate.dest && (
+                <div className="dest-overlay">
+                  <DestCard dest={gate.dest} />
+                </div>
+              )}
+            </div>
           </div>
-          <div className="status">
-            <span className="chip" data-s={chipState}>
-              {LABELS[state]}
-            </span>
-            <span>{readout}</span>
-            {state === "open" && (
-              <span className="timer">
-                {pad(Math.floor(elapsed / 60))}:{pad(elapsed % 60)} / 38:00
-              </span>
-            )}
-          </div>
-          {state === "open" && gate.dest && <DestCard dest={gate.dest} />}
+          <p className="hint view-hint">Faites glisser pour tourner autour de la salle, molette ou pincement pour zoomer, clic droit ou deux doigts pour vous déplacer.</p>
+          {state === "open" && gate.dest && (
+            <div className="dest-below">
+              <DestCard dest={gate.dest} />
+            </div>
+          )}
         </section>
 
         <section className="panel" aria-label="Console">
