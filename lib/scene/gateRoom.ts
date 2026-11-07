@@ -3,6 +3,7 @@ import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment
 import { TAU } from "../glyphs";
 import type { GateEngine } from "../gateEngine";
 import { glyphRingTexture, noiseTexture, paintedText, screenTexture } from "./textures";
+import { createGuards } from "./soldiers";
 
 /*
  * Salle de la porte : création originale (base souterraine, rampe, salle de contrôle vitrée).
@@ -22,6 +23,7 @@ export const PRESETS = {
   face: { label: "Face à la porte", pos: [0, 3.4, 10.5], target: [0, GATE_Y, 0] },
   rampe: { label: "Sur la rampe", pos: [1.3, 2.3, 5], target: [0, GATE_Y, 0] },
   controle: { label: "Salle de contrôle", pos: [0, 6.9, 19.6], target: [0, 3.2, 2] },
+  gardes: { label: "Près des gardes", pos: [-0.6, 1.75, 12.6], target: [-2.9, 1.15, 10.7] },
   p51: { label: "Accès P-51", pos: [5.5, 3.2, 9], target: [-13, 2.4, 15.25] },
   p52: { label: "Accès P-52", pos: [-5.5, 3.2, 9], target: [13, 2.4, 15.25] },
 } satisfies Record<string, CameraPreset>;
@@ -446,6 +448,18 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
     beacons.push({ light, mat, phase: i * 0.8 });
   });
 
+  /* ---------- Gardes ---------- */
+  const guards = createGuards(new THREE.Vector3(0, GATE_Y, 0), [
+    { pos: [-2.9, 10.7], face: [0, -1] },
+    { pos: [2.9, 10.7], face: [0, -1] },
+    { pos: [-5.6, 2.2], face: [0.3, 1] },
+    { pos: [5.6, 2.2], face: [-0.3, 1] },
+    { pos: [-11.5, 13.5], face: [1, 0] },
+    { pos: [11.5, 13.5], face: [-1, 0] },
+  ]);
+  scene.add(guards.group);
+  disposables.push(guards);
+
   /* ---------- Animation ---------- */
   function update(e: GateEngine, now: number) {
     const t = now / 1000;
@@ -498,6 +512,7 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
       b.light.intensity = p * 22;
       b.mat.emissiveIntensity = alarm ? 0.4 + p * 3 : 0;
     });
+    guards.update(e, t);
     void lit;
   }
 
