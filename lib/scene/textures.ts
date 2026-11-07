@@ -16,11 +16,16 @@ export function noiseTexture(base: [number, number, number], spread: number, opt
     img.data[i * 4 + 3] = 255;
   }
   x.putImageData(img, 0, 0);
-  for (let k = 0; k < 50; k++) {
-    x.fillStyle = `rgba(0,0,0,${Math.random() * 0.07})`;
-    x.beginPath();
-    x.arc(Math.random() * size, Math.random() * size, Math.random() * size * 0.18, 0, TAU);
-    x.fill();
+  // Taches diffuses (salissures du béton)
+  for (let k = 0; k < 40; k++) {
+    const cx = Math.random() * size;
+    const cy = Math.random() * size;
+    const r = size * (0.05 + Math.random() * 0.2);
+    const g = x.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, `rgba(0,0,0,${Math.random() * 0.06})`);
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    x.fillStyle = g;
+    x.fillRect(cx - r, cy - r, r * 2, r * 2);
   }
   if (opts.tile) {
     x.strokeStyle = "rgba(0,0,0,.45)";
@@ -109,5 +114,36 @@ export function screenTexture(hue: string) {
   x.stroke();
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
+/** Inscription peinte au pochoir (fond transparent). Redessinée quand la police est chargée. */
+export function paintedText(text: string, color: string) {
+  const c = document.createElement("canvas");
+  c.width = 1024;
+  c.height = 384;
+  const x = c.getContext("2d")!;
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 8;
+  const font = "700 300px 'Saira Condensed', 'Arial Narrow', Impact, sans-serif";
+  const draw = () => {
+    x.clearRect(0, 0, c.width, c.height);
+    x.font = font;
+    x.textAlign = "center";
+    x.textBaseline = "middle";
+    x.fillStyle = color;
+    x.fillText(text, c.width / 2, c.height / 2 + 10);
+    // Usure de la peinture
+    x.globalCompositeOperation = "destination-out";
+    for (let i = 0; i < 260; i++) {
+      x.fillStyle = `rgba(0,0,0,${Math.random() * 0.35})`;
+      x.fillRect(Math.random() * c.width, Math.random() * c.height, 2 + Math.random() * 8, 1 + Math.random() * 4);
+    }
+    x.globalCompositeOperation = "source-over";
+    t.needsUpdate = true;
+  };
+  draw();
+  document.fonts?.load(font).then(draw).catch(() => {});
   return t;
 }
