@@ -8,7 +8,8 @@ Projet de fan, non officiel. La salle, la porte, les symboles, les sons et les p
 
 - **Composition** : 6 symboles au choix parmi 38, le 7ᵉ (point d'origine) est ajouté automatiquement.
 - **Salle en 3D** (Three.js) : hangar en béton, plateforme et rampe, salle de contrôle vitrée en hauteur, gyrophares pendant la composition, vortex qui éclaire la pièce.
-- **Caméra libre** : glisser pour tourner, molette ou pincement pour zoomer, clic droit ou deux doigts pour se déplacer, et quatre points de vue prêts (vue d'ensemble, face à la porte, sur la rampe, salle de contrôle).
+- **Gardes** : six militaires génériques autour de la porte et devant les portes P-51 et P-52. Ils se mettent en alerte pendant la composition et mettent la porte en joue quand le vortex s'ouvre (sauf si l'iris est fermé).
+- **Caméra libre** : glisser pour tourner, molette ou pincement pour zoomer, clic droit ou deux doigts pour se déplacer, et des points de vue prêts (vue d'ensemble, face à la porte, sur la rampe, salle de contrôle, près des gardes, accès P-51 et P-52).
 - **Animation de la porte** : rotation de l'anneau en alternant le sens, chevrons qui s'enclenchent, jaillissement puis surface ondulante du vortex, iris.
 - **Carnet d'adresses** : enregistrer ses planètes (nom, désignation au format `P3X-582`, notes, coordonnées), les charger, modifier ou supprimer.
 - **Mondes inexplorés** : une adresse inconnue a environ une chance sur quatre de mener à un monde généré, ajouté au carnet.
@@ -44,6 +45,7 @@ npm start
 | `components/StargateConsole.tsx` | Écran principal : adresse, clavier, actions, journal |
 | `components/GateScene3D.tsx` | Vue 3D : rendu, caméra et points de vue |
 | `lib/scene/gateRoom.ts` | Construction de la salle et de la porte en 3D, animation |
+| `lib/scene/soldiers.ts` | Gardes : silhouettes, postures et animation |
 | `lib/scene/textures.ts` | Textures générées (béton, anneau des symboles, écrans) |
 | `components/PlanetForm.tsx` | Formulaire d'enregistrement d'une planète |
 | `components/AddressBook.tsx` | Carnet d'adresses |
