@@ -154,3 +154,7 @@ svg{display:block}
 .view-hint{margin:0;text-align:center}
 @media (max-width:880px){.dest-overlay{display:none}.dest-below{display:block}.cams .btn{padding:7px 8px;font-size:10.5px}}
 @media (hover:none){.view-hint{display:none}}
+
+/* Symboles gravés */
+.glyph .glyph-edge{stroke:rgba(10,14,19,.55)}
+.slot.locked .glyph .glyph-edge{stroke:rgba(80,40,10,.6)}
