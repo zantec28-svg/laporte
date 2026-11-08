@@ -15,6 +15,7 @@ const RH = R * 0.635; // rayon de l'horizon des événements
 const PLATFORM_H = 0.55;
 export const GATE_Y = R * 1.02 + PLATFORM_H;
 export const ROOM = { x: 13, zMin: -5, zMax: 17.2, h: 10 };
+const PILLARS_Z = [-2, 3, 8];
 export const CONTROL = { x: 6, yMin: 5, yMax: 8.2, zMax: 21 };
 
 export type CameraPreset = { label: string; pos: [number, number, number]; target: [number, number, number] };
@@ -24,8 +25,8 @@ export const PRESETS = {
   rampe: { label: "Sur la rampe", pos: [1.3, 2.3, 5], target: [0, GATE_Y, 0] },
   controle: { label: "Salle de contrôle", pos: [0, 6.9, 19.6], target: [0, 3.2, 2] },
   gardes: { label: "Près des gardes", pos: [-0.6, 1.75, 12.6], target: [-2.9, 1.15, 10.7] },
-  p51: { label: "Accès P-51", pos: [5.5, 3.2, 9], target: [-13, 2.4, 15.25] },
-  p52: { label: "Accès P-52", pos: [-5.5, 3.2, 9], target: [13, 2.4, 15.25] },
+  p51: { label: "Accès P-51", pos: [7, 4.2, 6], target: [-13, 4.2, 13.1] },
+  p52: { label: "Accès P-52", pos: [-7, 4.2, 6], target: [13, 4.2, 13.1] },
 } satisfies Record<string, CameraPreset>;
 export type PresetName = keyof typeof PRESETS;
 
@@ -183,8 +184,9 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
   room.add(glass);
 
   // Piliers, poutres, gaines
+  // Pas de pilier latéral à z = 13 : c'est l'emplacement des grandes portes d'accès
   for (const z of [-2, 3, 8, 13]) {
-    for (const s of [-1, 1]) room.add(box(0.9, ROOM.h, 0.9, mBeam, s * (ROOM.x - 0.45), ROOM.h / 2, z));
+    if (PILLARS_Z.includes(z)) for (const s of [-1, 1]) room.add(box(0.9, ROOM.h, 0.9, mBeam, s * (ROOM.x - 0.45), ROOM.h / 2, z));
     room.add(box(ROOM.x * 2, 0.6, 0.5, mBeam, 0, ROOM.h - 0.3, z, false));
   }
   for (const s of [-1, 1]) {
@@ -192,46 +194,62 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
     room.add(duct);
     room.add(rod(new THREE.Vector3(s * 10.5, ROOM.h - 1.3, ROOM.zMin), new THREE.Vector3(s * 10.5, ROOM.h - 1.3, ROOM.zMax), 0.18, mDuct));
   }
-  // Ligne jaune à mi-hauteur, sur tous les murs et autour des piliers
+  // Portes d'accès latérales : assez grandes pour faire passer la porte des étoiles
+  const DOOR = { z: 13.1, w: 7.4, h: 7.5, frame: 0.4 };
+  const doorZ0 = DOOR.z - DOOR.w / 2 - DOOR.frame;
+  const doorZ1 = DOOR.z + DOOR.w / 2 + DOOR.frame;
+
+  // Ligne jaune à mi-hauteur, sur tous les murs et autour des piliers (interrompue par les portes)
   const LINE_Y = 4.8;
   const LINE_H = 0.3;
-  for (const s of [-1, 1]) room.add(box(0.04, LINE_H, len, mYellow, s * (ROOM.x - 0.02), LINE_Y, midZ, false));
+  for (const s of [-1, 1]) {
+    for (const [z0, z1] of [[ROOM.zMin, doorZ0], [doorZ1, ROOM.zMax]]) {
+      room.add(box(0.04, LINE_H, z1 - z0, mYellow, s * (ROOM.x - 0.02), LINE_Y, (z0 + z1) / 2, false));
+    }
+  }
   room.add(box(ROOM.x * 2, LINE_H, 0.04, mYellow, 0, LINE_Y, ROOM.zMin + 0.02, false));
   room.add(box(ROOM.x * 2, LINE_H, 0.04, mYellow, 0, LINE_Y, ROOM.zMax - 0.02, false));
-  for (const z of [-2, 3, 8, 13]) for (const s of [-1, 1]) room.add(box(0.94, LINE_H, 0.94, mYellow, s * (ROOM.x - 0.45), LINE_Y, z, false));
+  for (const z of PILLARS_Z) for (const s of [-1, 1]) room.add(box(0.94, LINE_H, 0.94, mYellow, s * (ROOM.x - 0.45), LINE_Y, z, false));
 
-  // Portes d'accès latérales, au fond côté salle de contrôle, avec leur numéro au-dessus
-  const DOOR = { z: 15.25, w: 2.2, h: 2.9 };
+  const mGlassDoor = track(new THREE.MeshStandardMaterial({ color: 0x20303d, roughness: 0.1, metalness: 0.9, emissive: 0x0d1a24 }));
+  const mLamp = track(new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff1d0, emissiveIntensity: 1.5 }));
   ([[-1, "P-51"], [1, "P-52"]] as const).forEach(([s, label]) => {
     const wx = s * ROOM.x;
     const inward = -s;
-    const frameT = 0.22;
-    const fx = wx + inward * 0.09;
-    room.add(box(0.18, DOOR.h + frameT, frameT, mDoorFrame, fx, (DOOR.h + frameT) / 2, DOOR.z - DOOR.w / 2 - frameT / 2));
-    room.add(box(0.18, DOOR.h + frameT, frameT, mDoorFrame, fx, (DOOR.h + frameT) / 2, DOOR.z + DOOR.w / 2 + frameT / 2));
-    room.add(box(0.18, frameT, DOOR.w + frameT * 2, mDoorFrame, fx, DOOR.h + frameT / 2, DOOR.z));
-    // Deux battants métalliques avec hublots
+    const F = DOOR.frame;
+    const fx = wx + inward * 0.18;
+    // Cadre massif
+    room.add(box(0.36, DOOR.h + F, F, mDoorFrame, fx, (DOOR.h + F) / 2, DOOR.z - DOOR.w / 2 - F / 2));
+    room.add(box(0.36, DOOR.h + F, F, mDoorFrame, fx, (DOOR.h + F) / 2, DOOR.z + DOOR.w / 2 + F / 2));
+    room.add(box(0.36, F, DOOR.w + F * 2, mDoorFrame, fx, DOOR.h + F / 2, DOOR.z));
+    // Deux grands battants blindés
     for (const side of [-1, 1]) {
+      const leafW = DOOR.w / 2 - 0.03;
       const leafZ = DOOR.z + side * DOOR.w / 4;
-      room.add(box(0.08, DOOR.h, DOOR.w / 2 - 0.03, mDoor, wx + inward * 0.05, DOOR.h / 2, leafZ));
-      const win = box(0.02, 0.45, 0.32, track(new THREE.MeshStandardMaterial({ color: 0x20303d, roughness: 0.1, metalness: 0.9, emissive: 0x0d1a24 })), wx + inward * 0.1, 1.85, leafZ, false);
-      room.add(win);
-      room.add(box(0.06, 0.04, 0.3, mRail, wx + inward * 0.12, 1.05, DOOR.z + side * 0.18, false));
+      const lx = wx + inward * 0.1;
+      room.add(box(0.14, DOOR.h, leafW, mDoor, lx, DOOR.h / 2, leafZ));
+      // Renforts horizontaux et verticaux
+      for (let y = 0.9; y < DOOR.h - 0.3; y += 1.3) room.add(box(0.08, 0.16, leafW - 0.3, mDoorFrame, lx + inward * 0.1, y, leafZ, false));
+      room.add(box(0.08, DOOR.h - 0.4, 0.16, mDoorFrame, lx + inward * 0.1, DOOR.h / 2, leafZ + side * (leafW / 2 - 0.25), false));
+      // Hublot
+      room.add(box(0.03, 0.5, 0.36, mGlassDoor, lx + inward * 0.09, 1.85, DOOR.z + side * 0.6, false));
     }
+    // Joint central
+    room.add(box(0.06, DOOR.h, 0.06, mHazard, wx + inward * 0.19, DOOR.h / 2, DOOR.z, false));
     // Bandes de sécurité au sol devant la porte
-    const sill = new THREE.Mesh(new THREE.PlaneGeometry(0.9, DOOR.w + 0.4), mHazard);
+    const sill = new THREE.Mesh(new THREE.PlaneGeometry(1.2, DOOR.w + 0.8), mHazard);
     sill.rotation.x = -Math.PI / 2;
-    sill.position.set(wx + inward * 0.55, 0.013, DOOR.z);
+    sill.position.set(wx + inward * 0.8, 0.013, DOOR.z);
     room.add(sill);
-    // Lampe au-dessus de la porte
-    room.add(box(0.12, 0.12, 0.5, track(new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xfff1d0, emissiveIntensity: 1.5 })), wx + inward * 0.1, DOOR.h + 0.3, DOOR.z, false));
+    // Lampes de part et d'autre
+    for (const side of [-1, 1]) room.add(box(0.14, 0.5, 0.14, mLamp, wx + inward * 0.12, DOOR.h - 0.4, DOOR.z + side * (DOOR.w / 2 + F + 0.35), false));
     // Gros numéro jaune peint au-dessus
     const sign = new THREE.Mesh(
-      new THREE.PlaneGeometry(3.47, 1.3),
+      new THREE.PlaneGeometry(3.73, 1.4),
       track(new THREE.MeshStandardMaterial({ map: track(paintedText(label, "#f2c200")), transparent: true, roughness: 0.7, emissive: 0x3a2c00, emissiveIntensity: 0.5, depthWrite: false })),
     );
     sign.rotation.y = s * -Math.PI / 2;
-    sign.position.set(wx + inward * 0.03, 4.0, DOOR.z);
+    sign.position.set(wx + inward * 0.03, 8.6, DOOR.z);
     room.add(sign);
   });
 
@@ -434,8 +452,8 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
   const beaconPos: [number, number][] = [
     [-ROOM.x + 0.95, 1],
     [ROOM.x - 0.95, 1],
-    [-ROOM.x + 0.95, 11],
-    [ROOM.x - 0.95, 11],
+    [-ROOM.x + 0.95, 5.5],
+    [ROOM.x - 0.95, 5.5],
   ];
   beaconPos.forEach(([x, z], i) => {
     const mat = track(new THREE.MeshStandardMaterial({ color: 0x5a0d0d, emissive: 0xff2a1a, emissiveIntensity: 0 }));
@@ -454,8 +472,8 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
     { pos: [2.9, 10.7], face: [0, -1] },
     { pos: [-5.6, 2.2], face: [0.3, 1] },
     { pos: [5.6, 2.2], face: [-0.3, 1] },
-    { pos: [-11.5, 13.5], face: [1, 0] },
-    { pos: [11.5, 13.5], face: [-1, 0] },
+    { pos: [-11.4, 8.9], face: [1, 0] },
+    { pos: [11.4, 8.9], face: [-1, 0] },
   ]);
   scene.add(guards.group);
   disposables.push(guards);
