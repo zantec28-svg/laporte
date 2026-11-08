@@ -12,7 +12,13 @@ import { createElectricalPanel, createMountedGun } from "./props";
  */
 
 export const R = 5.0; // rayon extérieur de la porte (10 m de diamètre) : le vortex est bien plus large que la rampe
-const RH = R * 0.635; // rayon de l'horizon des événements
+// Proportions de la porte (fractions du rayon extérieur R) : structure fine, grand vortex
+const K = {
+  outerIn: 0.935, // bord intérieur de l'anneau extérieur
+  glyphIn: 0.815, // bord intérieur de l'anneau des symboles
+  rimIn: 0.79, // bord intérieur du rebord (= horizon)
+};
+const RH = R * K.rimIn; // rayon de l'horizon des événements
 const RAMP_END = 11.4;
 /** La porte repose au sol ; la rampe monte jusqu'au bas de l'horizon des événements. */
 export const GATE_Y = R + 0.05;
@@ -296,8 +302,8 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
   const gate = new THREE.Group();
   gate.position.set(0, GATE_Y, 0);
   scene.add(gate);
-  const outer = new THREE.Mesh(annulus(R, R * 0.84, 0.75), mGate);
-  const innerRim = new THREE.Mesh(annulus(R * 0.655, RH, 0.68), mGateDark);
+  const outer = new THREE.Mesh(annulus(R, R * K.outerIn, 0.5, 0.03), mGate);
+  const innerRim = new THREE.Mesh(annulus(R * K.glyphIn, RH, 0.46, 0.02), mGateDark);
   for (const m of [outer, innerRim]) {
     m.castShadow = m.receiveShadow = true;
     gate.add(m);
@@ -319,45 +325,44 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
     parent.add(im);
     return im;
   };
-  // Anneau extérieur découpé en 18 segments
-  ringOf(18, R * 0.92, [0.07, R * 0.155, 0.08], 0.38, mGateDeep, gate, 0.5);
-  // Stries fines le long du bord extérieur
-  ringOf(216, R * 0.975, [0.025, R * 0.04, 0.05], 0.38, mGateDeep, gate);
-  // Bourrelet en relief au milieu de l'anneau extérieur
-  const bead = new THREE.Mesh(track(new THREE.TorusGeometry(R * 0.905, 0.035, 8, 160)), mGateDark);
-  bead.position.z = 0.4;
+  const band = (a: number, b: number) => (a + b) / 2;
+  // Anneau extérieur : 18 segments, stries fines, filet en relief
+  ringOf(18, R * band(K.outerIn, 1), [0.05, R * (1 - K.outerIn) * 0.95, 0.06], 0.26, mGateDeep, gate, 0.5);
+  ringOf(270, R * 0.99, [0.018, R * 0.02, 0.04], 0.26, mGateDeep, gate);
+  const bead = new THREE.Mesh(track(new THREE.TorusGeometry(R * 0.955, 0.02, 6, 200)), mGateDark);
+  bead.position.z = 0.27;
   gate.add(bead);
-  // Dents mécaniques sur le bord intérieur de l'anneau extérieur
-  ringOf(117, R * 0.85, [R * 0.032, R * 0.035, 0.62], 0, mGateDark, gate);
-  // Rebord intérieur crénelé autour du vortex
-  ringOf(96, R * 0.648, [R * 0.022, R * 0.03, 0.78], 0, mGateDark, gate);
-  ringOf(96, R * 0.64, [R * 0.012, R * 0.018, 0.82], 0, mGateDeep, gate, 0.5);
+  // Dents mécaniques fines entre l'anneau extérieur et l'anneau des symboles
+  ringOf(156, R * (K.outerIn - 0.006), [R * 0.012, R * 0.014, 0.42], 0, mGateDark, gate);
+  // Rebord crénelé autour du vortex
+  ringOf(120, R * (K.rimIn + 0.006), [R * 0.01, R * 0.014, 0.52], 0, mGateDark, gate);
+  ringOf(120, R * (K.rimIn + 0.002), [R * 0.006, R * 0.008, 0.56], 0, mGateDeep, gate, 0.5);
 
-  // Anneau des symboles (tourne)
+  // Anneau des symboles (seul élément qui tourne)
   const glyphRing = new THREE.Group();
   gate.add(glyphRing);
-  const ringBody = new THREE.Mesh(annulus(R * 0.84, R * 0.655, 0.5, 0.02), mGateDark);
+  const ringBody = new THREE.Mesh(annulus(R * K.outerIn - 0.02, R * K.glyphIn + 0.02, 0.34, 0.015), mGateDark);
   ringBody.castShadow = true;
   glyphRing.add(ringBody);
-  const glyphTex = track(glyphRingTexture(0.84, 0.655, 0.748, 0.05));
+  const glyphMid = band(K.glyphIn, K.outerIn);
+  const glyphTex = track(glyphRingTexture(K.outerIn, K.glyphIn, glyphMid, 0.04));
   const glyphFace = new THREE.Mesh(
-    new THREE.RingGeometry(R * 0.655, R * 0.84, 195, 1),
+    new THREE.RingGeometry(R * K.glyphIn, R * K.outerIn, 234, 1),
     track(new THREE.MeshStandardMaterial({ map: glyphTex, roughness: 0.48, metalness: 0.55, emissive: 0xffffff, emissiveMap: glyphTex, emissiveIntensity: 0.05 })),
   );
-  glyphFace.position.z = 0.25 + 0.025;
+  glyphFace.position.z = 0.17 + 0.02;
   glyphRing.add(glyphFace);
-  // Séparations en relief entre les cases
-  ringOf(N, R * 0.748, [0.045, R * 0.17, 0.06], 0.29, mGateDeep, glyphRing, 0.5);
+  ringOf(N, R * glyphMid, [0.03, R * (K.outerIn - K.glyphIn) * 0.92, 0.04], 0.2, mGateDeep, glyphRing, 0.5);
 
-  // Chevrons : logement massif à ailettes et lentille ambre en relief (ambre éteinte, orange vif allumée)
+  // Chevrons : petits logements effilés posés sur l'anneau extérieur, lentille ambre
   const lamps: { mesh: THREE.Mesh; mat: THREE.MeshStandardMaterial }[] = [];
-  const housingGeo = track(poly([[-0.14 * R, 1.05 * R], [0.14 * R, 1.05 * R], [0.075 * R, 0.79 * R], [-0.075 * R, 0.79 * R]], 1.0));
-  const finGeo = track(poly([[0, 0.8 * R], [0.06 * R, 0.84 * R], [0.075 * R, 1.03 * R], [0, 1.03 * R]], 0.8));
-  const backGeo = track(new THREE.BoxGeometry(0.2 * R, 0.05 * R, 0.4));
+  const cy0 = K.outerIn - 0.02;
+  const housingGeo = track(poly([[-0.075 * R, 1.025 * R], [0.075 * R, 1.025 * R], [0.035 * R, cy0 * R], [-0.035 * R, cy0 * R]], 0.62));
+  const finGeo = track(poly([[0, cy0 * R], [0.03 * R, (cy0 + 0.02) * R], [0.045 * R, 1.015 * R], [0, 1.015 * R]], 0.5));
   const lampGeo = track(
     poly(
-      [[-0.095, 1.01], [-0.045, 1.01], [0, 0.915], [0.045, 1.01], [0.095, 1.01], [0, 0.83]].map(([x, y]) => [x * R, y * R] as [number, number]),
-      0.2,
+      [[-0.05, 1.008], [-0.024, 1.008], [0, 0.958], [0.024, 1.008], [0.05, 1.008], [0, cy0 + 0.005]].map(([x, y]) => [x * R, y * R] as [number, number]),
+      0.1,
     ),
   );
   for (let k = 0; k < 9; k++) {
@@ -369,16 +374,13 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
     for (const s of [-1, 1]) {
       const fin = new THREE.Mesh(finGeo, mGateDark);
       fin.scale.x = s;
-      fin.position.x = s * 0.13 * R;
+      fin.position.x = s * 0.068 * R;
       fin.castShadow = true;
       g.add(fin);
     }
-    const back = new THREE.Mesh(backGeo, mGateDeep);
-    back.position.set(0, 1.035 * R, 0.35);
-    g.add(back);
     const mat = track(new THREE.MeshStandardMaterial({ color: 0x7a5418, emissive: 0xffa030, emissiveIntensity: 0, roughness: 0.25, metalness: 0.35 }));
     const lamp = new THREE.Mesh(lampGeo, mat);
-    lamp.position.z = 0.58;
+    lamp.position.z = 0.34;
     g.add(lamp);
     lamps.push({ mesh: lamp, mat });
     gate.add(g);
@@ -543,7 +545,7 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
       const on = (e.lit[k] && !e.flickOff) || engaged;
       if (on) lit++;
       l.mat.emissiveIntensity += ((on ? 3.2 : 0) - l.mat.emissiveIntensity) * 0.35;
-      l.mesh.position.y = engaged ? -Math.sin(Math.PI * e.engageT) * R * 0.045 : 0;
+      l.mesh.position.y = engaged ? -Math.sin(Math.PI * e.engageT) * R * 0.022 : 0;
     });
     chevronLight.intensity = e.engageT >= 0 ? 6 : 0;
 
