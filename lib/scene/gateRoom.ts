@@ -22,7 +22,12 @@ const RH = R * K.rimIn; // rayon de l'horizon des événements
 const RAMP_END = 11.4;
 /** La porte repose au sol ; la rampe monte jusqu'au bas de l'horizon des événements. */
 export const GATE_Y = R + 0.05;
-const PLATFORM_H = GATE_Y - RH;
+/*
+ * Rampe rehaussée au-dessus du bas du vortex : à ce niveau, l'ouverture fait plus de 4 m de large,
+ * assez pour un engin aussi large que la rampe (3,6 m) avec de la marge.
+ */
+const RAMP_RAISE = 0.55;
+const PLATFORM_H = GATE_Y - RH + RAMP_RAISE;
 export const ROOM = { x: 13, zMin: -5, zMax: 17.2, h: 12.5 };
 const PILLARS_Z = [-2, 3];
 export const CONTROL = { x: 6, yMin: 5, yMax: 8.2, zMax: 21 };
@@ -281,10 +286,11 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
   }
 
   /* ---------- Plateforme et rampe ---------- */
-  // Palier en haut de la rampe, au ras du bas de l'horizon des événements
+  // Palier en haut de la rampe, et sa lèvre qui avance jusqu'au plan du vortex
   const rampStart = 2.0;
   const rampEnd = RAMP_END;
   room.add(box(3.6, PLATFORM_H, rampStart - 0.42, mGrate, 0, PLATFORM_H / 2, 0.42 + (rampStart - 0.42) / 2));
+  room.add(box(3.6, 0.1, 0.42, mGrate, 0, PLATFORM_H - 0.05, 0.21));
   for (const s of [-1, 1]) room.add(box(0.5, PLATFORM_H, rampStart - 0.42, mBeam, s * 2.05, PLATFORM_H / 2, 0.42 + (rampStart - 0.42) / 2));
   const rampLen = Math.hypot(rampEnd - rampStart, PLATFORM_H);
   const ramp = box(3.4, 0.12, rampLen, mGrate, 0, PLATFORM_H / 2, (rampStart + rampEnd) / 2);
