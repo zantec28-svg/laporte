@@ -7,7 +7,7 @@ Projet de fan, non officiel. La salle, la porte, les symboles, les sons et les p
 ## Fonctionnalités
 
 - **Composition** : 6 symboles au choix parmi 38, le 7ᵉ (point d'origine) est ajouté automatiquement.
-- **Salle en 3D** (Three.js) : murs et sol gris clair, ligne jaune à mi-hauteur, porte de 8 m posée au sol avec une rampe qui monte jusqu'au bas du vortex, salle de contrôle vitrée en hauteur, grandes portes d'accès P-51 et P-52, armoire électrique, mitrailleuse sur affût, gyrophares pendant la composition, vortex qui éclaire la pièce.
+- **Salle en 3D** (Three.js) : murs et sol gris clair, ligne jaune à mi-hauteur, porte de 10 m posée au sol avec une rampe qui monte jusqu'au bas du vortex, salle de contrôle vitrée en hauteur, grandes portes d'accès P-51 et P-52, armoire électrique, mitrailleuse sur affût, gyrophares pendant la composition, vortex qui éclaire la pièce.
 - **Gardes** : six militaires génériques autour de la porte et devant les portes P-51 et P-52. Ils se mettent en alerte pendant la composition et mettent la porte en joue quand le vortex s'ouvre (sauf si l'iris est fermé).
 - **Caméra libre** : glisser pour tourner, molette ou pincement pour zoomer, clic droit ou deux doigts pour se déplacer, et des points de vue prêts (vue d'ensemble, face à la porte, sur la rampe, salle de contrôle, près des gardes, accès P-51 et P-52, mitrailleuse).
 - **Animation de la porte** : rotation de l'anneau en alternant le sens, chevrons qui s'enclenchent, jaillissement puis surface ondulante du vortex, iris.

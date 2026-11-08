@@ -40,7 +40,7 @@ export default function GateScene3D({ engine, preset }: Props) {
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
     controls.minDistance = 2;
-    controls.maxDistance = 22;
+    controls.maxDistance = 26;
     controls.maxPolarAngle = Math.PI * 0.53;
     controls.addEventListener("start", () => (goal.current = null));
 

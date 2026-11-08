@@ -11,25 +11,25 @@ import { createElectricalPanel, createMountedGun } from "./props";
  * Unités en mètres. La porte fait face à +z ; la salle de contrôle est en hauteur, en face d'elle.
  */
 
-export const R = 4.0; // rayon extérieur de la porte (8 m de diamètre)
+export const R = 5.0; // rayon extérieur de la porte (10 m de diamètre) : le vortex est bien plus large que la rampe
 const RH = R * 0.635; // rayon de l'horizon des événements
 const RAMP_END = 11.4;
 /** La porte repose au sol ; la rampe monte jusqu'au bas de l'horizon des événements. */
 export const GATE_Y = R + 0.05;
 const PLATFORM_H = GATE_Y - RH;
-export const ROOM = { x: 13, zMin: -5, zMax: 17.2, h: 10 };
+export const ROOM = { x: 13, zMin: -5, zMax: 17.2, h: 12.5 };
 const PILLARS_Z = [-2, 3];
 export const CONTROL = { x: 6, yMin: 5, yMax: 8.2, zMax: 21 };
 
 export type CameraPreset = { label: string; pos: [number, number, number]; target: [number, number, number] };
 export const PRESETS = {
-  ensemble: { label: "Vue d'ensemble", pos: [9.5, 6.2, 14], target: [0, 3, 2] },
-  face: { label: "Face à la porte", pos: [0, 3.6, 13.5], target: [0, GATE_Y, 0] },
-  rampe: { label: "Sur la rampe", pos: [0.9, 3.4, 6.5], target: [0, GATE_Y, 0] },
+  ensemble: { label: "Vue d'ensemble", pos: [10.5, 7.6, 15.5], target: [0, 4, 1.5] },
+  face: { label: "Face à la porte", pos: [0, 4.6, 16], target: [0, GATE_Y, 0] },
+  rampe: { label: "Sur la rampe", pos: [0.9, 3.9, 8], target: [0, GATE_Y, 0] },
   controle: { label: "Salle de contrôle", pos: [0, 6.9, 19.6], target: [0, 3.2, 2] },
   gardes: { label: "Près des gardes", pos: [-0.4, 1.75, 14.2], target: [-2.9, 1.15, 12.2] },
-  p51: { label: "Accès P-51", pos: [6, 4.4, 4.5], target: [-13, 4.2, 11.6] },
-  p52: { label: "Accès P-52", pos: [-6, 4.4, 4.5], target: [13, 4.2, 11.6] },
+  p51: { label: "Accès P-51", pos: [7, 5.4, 3], target: [-13, 5, 11] },
+  p52: { label: "Accès P-52", pos: [-7, 5.4, 3], target: [13, 5, 11] },
   tourelle: { label: "Mitrailleuse", pos: [7.5, 2.6, 12.5], target: [4.3, 1.1, 8.2] },
 } satisfies Record<string, CameraPreset>;
 export type PresetName = keyof typeof PRESETS;
@@ -201,12 +201,12 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
     room.add(rod(new THREE.Vector3(s * 10.5, ROOM.h - 1.3, ROOM.zMin), new THREE.Vector3(s * 10.5, ROOM.h - 1.3, ROOM.zMax), 0.18, mDuct));
   }
   // Portes d'accès latérales : assez grandes pour faire passer la porte des étoiles
-  const DOOR = { z: 10.2, w: 8.6, h: 8.6, frame: 0.35 };
+  const DOOR = { z: 9.6, w: 10.4, h: 10.4, frame: 0.35 };
   const doorZ0 = DOOR.z - DOOR.w / 2 - DOOR.frame;
   const doorZ1 = DOOR.z + DOOR.w / 2 + DOOR.frame;
 
   // Ligne jaune à mi-hauteur, sur tous les murs et autour des piliers (interrompue par les portes)
-  const LINE_Y = 4.8;
+  const LINE_Y = ROOM.h / 2;
   const LINE_H = 0.3;
   for (const s of [-1, 1]) {
     for (const [z0, z1] of [[ROOM.zMin, doorZ0], [doorZ1, ROOM.zMax]]) {
@@ -214,7 +214,8 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
     }
   }
   room.add(box(ROOM.x * 2, LINE_H, 0.04, mYellow, 0, LINE_Y, ROOM.zMin + 0.02, false));
-  room.add(box(ROOM.x * 2, LINE_H, 0.04, mYellow, 0, LINE_Y, ROOM.zMax - 0.02, false));
+  // Sur le mur de la salle de contrôle, la ligne s'interrompt au niveau de la vitre
+  for (const s of [-1, 1]) room.add(box(ROOM.x - CONTROL.x, LINE_H, 0.04, mYellow, s * (ROOM.x + CONTROL.x) / 2, LINE_Y, ROOM.zMax - 0.02, false));
   for (const z of PILLARS_Z) for (const s of [-1, 1]) room.add(box(0.94, LINE_H, 0.94, mYellow, s * (ROOM.x - 0.45), LINE_Y, z, false));
 
   const mGlassDoor = track(new THREE.MeshStandardMaterial({ color: 0x20303d, roughness: 0.1, metalness: 0.9, emissive: 0x0d1a24 }));
@@ -260,7 +261,7 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
   });
 
   // Nervures du mur derrière la porte
-  for (let i = 0; i < 4; i++) room.add(box(ROOM.x * 2, 0.25, 0.3, mBeam, 0, 1.8 + i * 2.2, ROOM.zMin + 0.15, false));
+  for (let i = 0; i < 5; i++) room.add(box(ROOM.x * 2, 0.25, 0.3, mBeam, 0, 1.8 + i * 2.4, ROOM.zMin + 0.15, false));
   // Marquage au sol au pied de la rampe
   const mark = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.25), mHazard);
   mark.rotation.x = -Math.PI / 2;
@@ -472,7 +473,7 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
     [6, 11, false],
   ];
   for (const [x, z, shadow] of spots) {
-    const sp = new THREE.SpotLight(0xdfe8f2, 90, 0, 0.75, 0.65, 2);
+    const sp = new THREE.SpotLight(0xdfe8f2, 140, 0, 0.75, 0.65, 2);
     sp.position.set(x, ROOM.h - 0.4, z);
     sp.target.position.set(x * 0.4, 0, z);
     if (shadow) {
@@ -513,7 +514,7 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
   });
 
   /* ---------- Armoire électrique (à gauche de P-51 vue de face) et mitrailleuse ---------- */
-  const panel = createElectricalPanel(track, -ROOM.x, 1, DOOR.z + DOOR.w / 2 + DOOR.frame + 1.2, ROOM.h - 0.6);
+  const panel = createElectricalPanel(track, -ROOM.x, 1, DOOR.z + DOOR.w / 2 + DOOR.frame + 1.0, ROOM.h - 0.6);
   scene.add(panel.group);
   const gun = createMountedGun(track, 4.3, 8.2, new THREE.Vector3(0, GATE_Y, 0));
   scene.add(gun.group);
@@ -522,10 +523,10 @@ export function buildGateRoom(renderer: THREE.WebGLRenderer) {
   const guards = createGuards(new THREE.Vector3(0, GATE_Y, 0), [
     { pos: [-2.9, 12.2], face: [0, -1] },
     { pos: [2.9, 12.2], face: [0, -1] },
-    { pos: [-6, 1.8], face: [0.3, 1] },
-    { pos: [6, 1.8], face: [-0.3, 1] },
-    { pos: [-11.4, 4.6], face: [1, 0] },
-    { pos: [11.4, 4.6], face: [-1, 0] },
+    { pos: [-6.8, 2.0], face: [0.3, 1] },
+    { pos: [6.8, 2.0], face: [-0.3, 1] },
+    { pos: [-11.4, 3.85], face: [1, 0] },
+    { pos: [11.4, 3.85], face: [-1, 0] },
   ]);
   scene.add(guards.group);
   disposables.push(guards);
