@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { GLYPHS, N, STEP, TAU } from "../glyphs";
 
 /** Texture de béton / métal procédurale (bruit + taches), répétable. */
-export function noiseTexture(base: [number, number, number], spread: number, opts: { size?: number; tile?: boolean; stripes?: boolean } = {}) {
+export function noiseTexture(base: [number, number, number], spread: number, opts: { size?: number; tile?: boolean; stripes?: boolean; soft?: boolean } = {}) {
   const size = opts.size ?? 256;
   const c = document.createElement("canvas");
   c.width = c.height = size;
@@ -17,7 +17,7 @@ export function noiseTexture(base: [number, number, number], spread: number, opt
   }
   x.putImageData(img, 0, 0);
   // Taches diffuses (salissures du béton)
-  for (let k = 0; k < 40; k++) {
+  for (let k = 0; k < (opts.soft ? 14 : 40); k++) {
     const cx = Math.random() * size;
     const cy = Math.random() * size;
     const r = size * (0.05 + Math.random() * 0.2);
